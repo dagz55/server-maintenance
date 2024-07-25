@@ -1,0 +1,17 @@
+{
+  "name": "server-maintenance-app",
+  "version": "1.0.0",
+  "description": "Server Maintenance Process Application",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.17.1",
+    "multer": "^1.4.2",
+    "tailwindcss": "^2.2.19",
+    "postcss": "^8.3.11",
+    "autoprefixer": "^10.4.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "build:css": "tailwindcss build ./src/styles.css -o ./public/styles.css"
+  }
+}
