@@ -651,25 +651,28 @@ import shutil
 
 def check_az_cli():
     try:
-        # Use 'where' on Windows, 'which' on Unix-like systems
-        if sys.platform.startswith('win'):
-            result = subprocess.run(["where", "az"], capture_output=True, text=True)
-        else:
-            result = subprocess.run(["which", "az"], capture_output=True, text=True)
-        
-        if result.returncode != 0:
+        # Check if 'az' command is available
+        result = shutil.which("az")
+        if not result:
             console.print("[red]Azure CLI is not installed or not in PATH. Please install Azure CLI and try again.[/red]")
             sys.exit(1)
         
         # Check Azure CLI version
-        version_result = subprocess.run(["az", "version", "--output", "tsv"], capture_output=True, text=True)
+        version_result = subprocess.run(["az", "version", "--output", "json"], capture_output=True, text=True)
         if version_result.returncode != 0:
             console.print("[red]Failed to check Azure CLI version. Please ensure it's correctly installed.[/red]")
             sys.exit(1)
         
-        console.print(f"[green]Azure CLI is installed. Version: {version_result.stdout.strip()}[/green]")
-    except FileNotFoundError:
-        console.print("[red]Error: Unable to check for Azure CLI. Ensure 'which' (Unix) or 'where' (Windows) is available.[/red]")
+        version_info = json.loads(version_result.stdout)
+        azure_cli_version = version_info.get('azure-cli', 'Unknown')
+        azure_cli_core_version = version_info.get('azure-cli-core', 'Unknown')
+        azure_cli_telemetry_version = version_info.get('azure-cli-telemetry', 'Unknown')
+        
+        console.print(f"[green]Azure CLI is installed. Version: {azure_cli_version}[/green]")
+        console.print(f"[green]Azure CLI Core Version: {azure_cli_core_version}[/green]")
+        console.print(f"[green]Azure CLI Telemetry Version: {azure_cli_telemetry_version}[/green]")
+    except json.JSONDecodeError:
+        console.print("[red]Failed to parse Azure CLI version information. Please ensure it's correctly installed.[/red]")
         sys.exit(1)
     except Exception as e:
         console.print(f"[red]An unexpected error occurred while checking for Azure CLI: {str(e)}[/red]")
