@@ -85,10 +85,16 @@ def run_az_command(command):
 def check_az_login():
     try:
         result = run_az_command("az account show")
-        if result.startswith("Error:"):
+        if isinstance(result, str) and "az login" in result.lower():
             console.print("[yellow]You are not logged in to Azure. Please run 'az login' to authenticate.[/yellow]")
             return False
-        return True
+        # Try to parse the JSON output
+        try:
+            json.loads(result)
+            return True
+        except json.JSONDecodeError:
+            console.print(f"[red]Unexpected response from Azure CLI: {result}[/red]")
+            return False
     except Exception as e:
         console.print(f"[red]Error checking Azure login status: {str(e)}[/red]")
         return False
