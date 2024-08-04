@@ -723,8 +723,12 @@ def install_packages():
         try:
             subprocess.check_call([sys.executable, "-m", "pip", "install", *missing])
             console.print("[green]All required packages installed successfully.[/green]")
+            
+            # Apply patch to Azure CLI
+            subprocess.check_call([sys.executable, "patch_azure_cli.py"])
+            console.print("[green]Azure CLI patched successfully.[/green]")
         except subprocess.CalledProcessError as e:
-            console.print(f"[red]Error during package installation: {str(e)}[/red]")
+            console.print(f"[red]Error during package installation or patching: {str(e)}[/red]")
             sys.exit(1)
     else:
         console.print("[green]All required packages are already installed.[/green]")
