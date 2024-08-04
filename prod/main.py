@@ -654,28 +654,36 @@ def check_az_cli():
         # Check if 'az' command is available
         result = shutil.which("az")
         if not result:
-            console.print("[red]Azure CLI is not installed or not in PATH. Please install Azure CLI and try again.[/red]")
-            sys.exit(1)
+            console.print("[yellow]Warning: 'az' command not found in PATH. Attempting to proceed anyway.[/yellow]")
         
         # Check Azure CLI version
-        version_result = subprocess.run(["az", "version", "--output", "json"], capture_output=True, text=True)
-        if version_result.returncode != 0:
-            console.print("[red]Failed to check Azure CLI version. Please ensure it's correctly installed.[/red]")
-            sys.exit(1)
-        
-        version_info = json.loads(version_result.stdout)
-        azure_cli_version = version_info.get('azure-cli', 'Unknown')
-        azure_cli_core_version = version_info.get('azure-cli-core', 'Unknown')
-        azure_cli_telemetry_version = version_info.get('azure-cli-telemetry', 'Unknown')
-        
-        console.print(f"[green]Azure CLI is installed. Version: {azure_cli_version}[/green]")
-        console.print(f"[green]Azure CLI Core Version: {azure_cli_core_version}[/green]")
-        console.print(f"[green]Azure CLI Telemetry Version: {azure_cli_telemetry_version}[/green]")
-    except json.JSONDecodeError:
-        console.print("[red]Failed to parse Azure CLI version information. Please ensure it's correctly installed.[/red]")
-        sys.exit(1)
+        try:
+            version_result = subprocess.run(["az", "version", "--output", "json"], capture_output=True, text=True, timeout=10)
+            if version_result.returncode == 0:
+                version_info = json.loads(version_result.stdout)
+                azure_cli_version = version_info.get('azure-cli', 'Unknown')
+                azure_cli_core_version = version_info.get('azure-cli-core', 'Unknown')
+                azure_cli_telemetry_version = version_info.get('azure-cli-telemetry', 'Unknown')
+                
+                console.print(f"[green]Azure CLI is installed. Version: {azure_cli_version}[/green]")
+                console.print(f"[green]Azure CLI Core Version: {azure_cli_core_version}[/green]")
+                console.print(f"[green]Azure CLI Telemetry Version: {azure_cli_telemetry_version}[/green]")
+            else:
+                console.print("[yellow]Warning: Unable to get Azure CLI version. Attempting to proceed anyway.[/yellow]")
+        except subprocess.TimeoutExpired:
+            console.print("[yellow]Warning: Azure CLI version check timed out. Attempting to proceed anyway.[/yellow]")
+        except json.JSONDecodeError:
+            console.print("[yellow]Warning: Failed to parse Azure CLI version information. Attempting to proceed anyway.[/yellow]")
+        except Exception as e:
+            console.print(f"[yellow]Warning: Unexpected error while checking Azure CLI version: {str(e)}. Attempting to proceed anyway.[/yellow]")
     except Exception as e:
-        console.print(f"[red]An unexpected error occurred while checking for Azure CLI: {str(e)}[/red]")
+        console.print(f"[yellow]Warning: An unexpected error occurred while checking for Azure CLI: {str(e)}. Attempting to proceed anyway.[/yellow]")
+    
+    # Instead of exiting, we'll ask the user if they want to continue
+    if Confirm.ask("Do you want to continue with the script?"):
+        return
+    else:
+        console.print("[red]Script execution cancelled by user.[/red]")
         sys.exit(1)
 
 def setup_venv():
