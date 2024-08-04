@@ -692,21 +692,25 @@ def setup_venv():
 
 def install_packages():
     console.print("[cyan]Checking and installing required packages...[/cyan]")
-    try:
-        import pkg_resources
-        required = {'rich', 'azure-cli'}
-        installed = {pkg.key for pkg in pkg_resources.working_set}
-        missing = required - installed
+    required = {'rich', 'azure-cli'}
+    missing = set()
 
-        if missing:
-            console.print(f"[yellow]Installing missing packages: {', '.join(missing)}[/yellow]")
+    for package in required:
+        try:
+            __import__(package)
+        except ImportError:
+            missing.add(package)
+
+    if missing:
+        console.print(f"[yellow]Installing missing packages: {', '.join(missing)}[/yellow]")
+        try:
             subprocess.check_call([sys.executable, "-m", "pip", "install", *missing])
             console.print("[green]All required packages installed successfully.[/green]")
-        else:
-            console.print("[green]All required packages are already installed.[/green]")
-    except Exception as e:
-        console.print(f"[red]Error during package installation: {str(e)}[/red]")
-        sys.exit(1)
+        except subprocess.CalledProcessError as e:
+            console.print(f"[red]Error during package installation: {str(e)}[/red]")
+            sys.exit(1)
+    else:
+        console.print("[green]All required packages are already installed.[/green]")
 
 if __name__ == "__main__":
     try:
